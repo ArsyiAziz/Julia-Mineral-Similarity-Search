@@ -79,12 +79,52 @@ app.layout = html_div([
             html_div(className="flex flex-row mb-6", [
                 html_button("Cosine", className="border-b-4 border-[#2563eb] px-2"),
                 html_button("Jaccard", className="border-b-4 border-gray px-2"),
-                html_button()
+                html_button(),
             ]),
-            
-            html_div([html_h3("Selected Mineral:", className="pe-2"), html_div([html_div("Mineral 1", className="rounded-md border border-black px-2")], id="selected-minerals")], className="flex flex-row"),
-            
-            dcc_graph()
+            html_div(className="mb-2", [
+                html_div(id="selected-minerals", className="flex flex-row", [
+                    html_h3("Selected minerals:", className="pe-2 font-bold"), 
+
+                    html_div("Mineral 1", className="rounded-md border border-black px-2")])
+                ]),
+            html_div(className="grid md:grid-cols-3", [
+                html_div([
+                    html_div("Top 5 Minerals"),
+                    html_table(className="table-auto w-full text-left", [
+                        html_thead([
+                            html_th("Mineral Name"),
+                            html_th("Score")
+                        ])
+                        html_tbody([
+                            html_tr([
+                                html_td("Placeholder"),
+                                html_td("90%")
+                            ]),
+                            html_tr([
+                                html_td("Placeholder"),
+                                html_td("90%")
+                            ]),
+                            html_tr([
+                                html_td("Placeholder"),
+                                html_td("90%")
+                            ]),
+                            html_tr([
+                                html_td("Placeholder"),
+                                html_td("90%")
+                            ]),
+                            html_tr([
+                                html_td("Placeholder"),
+                                html_td("90%")
+                            ]),
+                            
+                        ])
+                    ]),
+                ]),
+                html_div(className="md:col-span-2", [
+                        html_div("Similarity scores"),
+                        dcc_graph()
+                ]),
+            ]),
         ])
     ])
 ])
