@@ -140,7 +140,7 @@ callback!(app,
 ) do page_current, page_size, search
     # Filter rows based on search input, if provided
     filtered_df = if !isempty(search)
-        df[occursin.(search, df[!, "Name"]), :]
+        df[occursin.(lowercase(search), lowercase.(df[!, "Name"])), :]
     else
         df
     end
