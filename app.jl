@@ -82,7 +82,9 @@ app.layout = html_div([
                 html_div(className="flex flex-row mb-2", [
                     dcc_store(id="memory-metric"),
                     html_button("Cosine", id="btn-cosine-metric", className="border-b-4 border-[#2563eb] px-2"),
-                    html_button("Jaccard", id="btn-jaccard-metric", className="border-b-4 border-gray px-2"),
+                    html_button("Ruzicka", id="btn-ruzicka-metric", className="border-b-4 border-gray px-2"),
+                    html_button("Manhattan", id="btn-manhattan-metric", className="border-b-4 border-gray px-2"),
+                    html_button("Euclidean", id="btn-euclidean-metric", className="border-b-4 border-gray px-2"),
                     html_button(),
                 ]),
                 html_div(className="flex flex-col mb-2",[
@@ -107,7 +109,7 @@ app.layout = html_div([
                 html_div([
                     dash_datatable(
                         id="datatable-property-similarity",
-                        columns=[Dict("name" => "Name", "id" => "Name"), Dict("name" => "Similarity", "id" => "Similarity")],
+                        columns=[Dict("name" => "Name", "id" => "Name"), Dict("name" => "Similarity (%)", "id" => "Similarity")],
                         style_table=Dict(
                             "minWidth" => "100%",      # Ensures table stretches to full width
                             "overflowX" => "auto"      # Enables horizontal scroll
@@ -183,8 +185,12 @@ callback!(app,
     selected_rows = map(row -> row + 1, selected_rows)
     selected_indices = map(row -> data[row]["index"], selected_rows)
     
-    if metric == "jaccard"
-        metric = jaccard_similarity
+    if metric == "ruzicka"
+        metric = ruzicka_similarity
+    elseif metric == "manhattan"
+        metric = manhattan_distance
+    elseif metric == "euclidean"
+        metric = euclidean_distance
     else
         metric = cosine_similarity
     end
@@ -199,27 +205,66 @@ callback!(app,
     Dict.(pairs.(eachrow(df_similarity))), selected_minerals
 end
 
+function update_metric_buttons(triggered_id)
+    # Define default styles for buttons
+    default_style = "border-b-4 border-gray px-2"
+    active_style = "border-b-4 border-[#2563eb] px-2 active-similarity-button"
+
+    # Initialize styles with default values
+    styles = [default_style for _ in 1:4]
+
+    # Define the metric names in the same order as the buttons
+    metrics = ["cosine", "ruzicka", "manhattan", "euclidean"]
+
+    # Determine which button was pressed and update styles and metric accordingly
+    index = findfirst(isequal(triggered_id), ["btn-$(metric)-metric" for metric in metrics])
+    if index !== nothing
+        styles[index] = active_style
+        return (styles..., metrics[index])
+    else
+        # Return default state when no button is matched
+        return (active_style, default_style, default_style, default_style, "cosine")
+    end
+end
+
+
+# Set up the callback with multiple outputs and inputs
 callback!(app,
     Output("btn-cosine-metric", "className"),
-    Output("btn-jaccard-metric", "className"),
+    Output("btn-ruzicka-metric", "className"),
+    Output("btn-manhattan-metric", "className"),
+    Output("btn-euclidean-metric", "className"),
     Output("memory-metric", "data"),
     Input("btn-cosine-metric", "n_clicks"),
-    Input("btn-jaccard-metric", "n_clicks"),
-) do _, _
+    Input("btn-ruzicka-metric", "n_clicks"),
+    Input("btn-manhattan-metric", "n_clicks"),
+    Input("btn-euclidean-metric", "n_clicks")
+) do _, _, _, _
     ctx = callback_context()
+    
+    # Check if any button was triggered
     if isempty(ctx.triggered)
-        return "border-b-4 border-[#2563eb] px-2 active-similarity-button", "border-b-4 border-gray px-2", "cosine"
+        # Default state if no button has been pressed
+        return ("border-b-4 border-[#2563eb] px-2 active-similarity-button",
+                "border-b-4 border-gray px-2",
+                "border-b-4 border-gray px-2",
+                "border-b-4 border-gray px-2",
+                "cosine")
     end
 
-    triggered_id = ctx.triggered[1][1][1:end-9]  
-    if triggered_id == "btn-cosine-metric"
-        "border-b-4 border-[#2563eb] px-2 active-similarity-button", "border-b-4 border-gray px-2", "cosine"
-    elseif triggered_id == "btn-jaccard-metric"
-        "border-b-4 border-gray px-2", "border-b-4 border-[#2563eb] px-2 active-similarity-button", "jaccard"
-    else
-        # Default state
-        "border-b-4 border-[#2563eb] px-2 active-similarity-button", "border-b-4 border-gray px-2", "cosine"
-    end
+    # Extract the ID of the triggered button and adjust styles accordingly
+    triggered_id = ctx.triggered[1][1][1:end-9]
+    update_metric_buttons(triggered_id)
+end
+
+
+callback!(app,
+    Output("datatable-property-similarity", "columns"),  # Add this to update the columns
+    Input("memory-metric", "data"),
+) do metric
+    similarity_columns = [Dict("name" => "Name", "id" => "Name"), Dict("name" => "Similarity (%)", "id" => "Similarity")]
+    distance_columns = [Dict("name" => "Name", "id" => "Name"), Dict("name" => "Distance", "id" => "Similarity")]
+    metric ∈ ["cosine", "ruzicka"] ?  similarity_columns : distance_columns
 end
 
 # Callback for updating page size when changed by the user
