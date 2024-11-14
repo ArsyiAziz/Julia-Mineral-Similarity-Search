@@ -12,7 +12,7 @@ app = dash(external_scripts=external_scripts)
 
 # Load the data
 df = CSV.read("Minerals_Database.csv", DataFrame)
-df[!," index"] = 1:nrow(df)
+df[!,"index"] = 1:nrow(df)
 
 visible_columns = ["Name", "Crystal Structure", "Mohs Hardness", "Diaphaneity", "Specific Gravity", "Optical", "Refractive Index", "Dispersion"]
 
@@ -72,8 +72,6 @@ app.layout = html_div([
             # style_data=Dict("border"=>"1px solid black"),
             # style_header=Dict("border"=>"1px solid black"),
         ),
-        html_button("Reset", className="rounded border border-slate-300 p-2 bg-[#475569] text-white px-6"),
-        html_button("Calculate", className="rounded border border-slate-300 p-2 bg-[#2563eb] text-white px-6"),
         ]),
         
         html_div(className="px-8 py-6 rounded rounded-md bg-white", [
@@ -124,6 +122,7 @@ app.layout = html_div([
                         ),
                     ),
                 ]),
+                dcc_graph(className="md:col-span-2 min-h-96	")
             ]),
         ])
     ])
@@ -167,20 +166,23 @@ callback!(app,
     Output("selected-minerals", "children"),
     Input("datatable-database", "selected_rows"),
     Input("similar_size", "value"),
+    State("datatable-database", "data"),
     State("datatable-database", "page_current"),
     State("datatable-database", "page_size"),
-) do selected_rows, similar_size, page_current, page_size
+) do selected_rows, similar_size, data, page_current, page_size
     if selected_rows == []
         return [Dict("Name" => "-", "Similarity" => "-")], ""
     end 
     selected_rows = map(row -> page_current*page_size + row + 1, selected_rows)
+    selected_indices = map(row -> data[row]["index"], selected_rows)
+    
     selected_minerals = map(row -> begin
         html_div(row, className="border border-slate-500 rounded rounded-md px-2 bg-[#475569] text-white")
-        end, df[selected_rows, "Name"]
+        end, df[selected_indices, "Name"]
     )
     similarity_columns = ["Crystal Structure", "Mohs Hardness", "Diaphaneity", "Specific Gravity", "Optical", "Refractive Index", "Dispersion"]
 
-    df_similarity  = find_similar_minerals(df, selected_rows[1], similarity_columns, similar_size)
+    df_similarity  = find_similar_minerals(df, selected_indices[1], similarity_columns, similar_size)
     Dict.(pairs.(eachrow(df_similarity))), selected_minerals
 end
 
