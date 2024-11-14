@@ -1,5 +1,5 @@
 using Dash
-using CSV, DataFrames
+using CSV, DataFrames, PlotlyJS
 include("Calculate.jl")
 using .Calculate
 
@@ -15,7 +15,12 @@ app = dash(external_scripts=external_scripts)
 df = CSV.read("Minerals_Database.csv", DataFrame)
 df[!,"index"] = 1:nrow(df)
 
-visible_columns = ["Name", "Crystal Structure", "Mohs Hardness", "Diaphaneity", "Specific Gravity", "Optical", "Refractive Index", "Dispersion"]
+
+PROPERTY_COLUMNS = ["Crystal Structure", "Mohs Hardness", "Diaphaneity", "Specific Gravity", "Optical", "Refractive Index", "Dispersion"]
+
+VISIBLE_COLUMNS = vcat(["Name"], PROPERTY_COLUMNS)
+
+
 
 app.layout = html_div([
     html_div(className="px-10 py-6 mx-auto bg-[#52525b] w-screen", [
@@ -49,7 +54,7 @@ app.layout = html_div([
         ]),
         dash_datatable(
             id="datatable-database",
-            columns=[Dict("name" => c, "id" => c) for c in visible_columns],
+            columns=[Dict("name" => c, "id" => c) for c in VISIBLE_COLUMNS],
             page_current=0,
             page_action="custom",
             row_selectable="single",
@@ -78,7 +83,7 @@ app.layout = html_div([
         html_div(className="px-8 py-6 rounded rounded-md bg-white", [
             html_h2("Property Similarity Summary", className="text-xl font-bold"),
             
-            html_div(className="flex justify-between", [
+            html_div(className="flex justify-between mb-4", [
                 html_div(className="flex flex-row mb-2", [
                     dcc_store(id="memory-metric"),
                     html_button("Cosine", id="btn-cosine-metric", className="border-b-4 border-[#2563eb] px-2"),
@@ -124,9 +129,15 @@ app.layout = html_div([
                         style_header=Dict(
                             "fontWeight" => "bold"     # Bold header text
                         ),
+                        row_selectable="single",
+                        selected_rows=[]
                     ),
                 ]),
-                dcc_graph(className="md:col-span-2 min-h-96	")
+                dcc_graph(
+                    id="graph-properties", 
+                    className="md:col-span-2 min-h-96",
+                    
+                )
             ]),
         ])
     ])
@@ -167,6 +178,10 @@ callback!(app,
 end
 
 
+function get_datatable_row_index(data, row)
+    data[row]["index"][1]
+end
+
 
 callback!(app,
     Output("datatable-property-similarity", "data"),
@@ -180,11 +195,12 @@ callback!(app,
 
 ) do selected_rows, metric, similar_size, data, page_current, page_size
     if selected_rows == []
-        return [Dict("Name" => "-", "Similarity" => "-")], ""
+        return [], ""
     end 
-    selected_rows = map(row -> row + 1, selected_rows)
-    selected_indices = map(row -> data[row]["index"], selected_rows)
-    
+
+    selected_index = get_datatable_row_index(data, selected_rows[1] + 1)
+   
+
     if metric == "ruzicka"
         metric = ruzicka_similarity
     elseif metric == "manhattan"
@@ -195,14 +211,11 @@ callback!(app,
         metric = cosine_similarity
     end
 
-    selected_minerals = map(row -> begin
-        html_div(row, className="border border-slate-500 rounded rounded-md px-2 bg-[#475569] text-white")
-        end, df[selected_indices, "Name"]
-    )
-    similarity_columns = ["Crystal Structure", "Mohs Hardness", "Diaphaneity", "Specific Gravity", "Optical", "Refractive Index", "Dispersion"]
+    selected_mineral = html_div(df[selected_index, "Name"], className="border border-slate-500 rounded rounded-md px-2 bg-[#475569] text-white")
 
-    df_similarity  = find_similar_minerals(df, selected_indices[1], similarity_columns, metric, similar_size)
-    Dict.(pairs.(eachrow(df_similarity))), selected_minerals
+
+    df_similarity  = find_similar_minerals(df, selected_index, PROPERTY_COLUMNS, metric, similar_size)
+    Dict.(pairs.(eachrow(df_similarity))), selected_mineral
 end
 
 function update_metric_buttons(triggered_id)
@@ -256,6 +269,49 @@ callback!(app,
     triggered_id = ctx.triggered[1][1][1:end-9]
     update_metric_buttons(triggered_id)
 end
+
+
+# Set up the callback with multiple outputs and inputs
+callback!(app,
+    Output("graph-properties", "figure"),
+    Input("datatable-database", "selected_rows"),
+    Input("datatable-property-similarity", "selected_rows"),
+    State("datatable-database", "data"),
+    State("datatable-property-similarity", "data"),
+) do database_selected_rows, property_similarity_selected_rows, database_data, property_similarity_data
+    if database_selected_rows == [] || property_similarity_selected_rows == []
+        return plot(scatterpolar(r=[0, 0, 0, 0, 0, 0, 0, 0], theta=vcat(PROPERTY_COLUMNS, PROPERTY_COLUMNS[1]) ))
+    end
+
+    current_element_index = get_datatable_row_index(database_data, database_selected_rows[1] + 1)
+    similar_element_index = get_datatable_row_index(property_similarity_data, property_similarity_selected_rows[1] + 1)
+    
+    a = Vector(df[current_element_index, PROPERTY_COLUMNS])
+    b = Vector(df[similar_element_index, PROPERTY_COLUMNS])
+
+
+    # Modified element_similarities calculation
+    element_similarities = [max(abs(a[i]), abs(b[i])) != 0 ? 
+                            1 - abs(a[i] - b[i]) / (max(abs(a[i]), abs(b[i]))) : 
+                            1 for i in 1:length(a)]
+                            
+    return plot(scatterpolar(
+        r=vcat(element_similarities, element_similarities[1]),
+        theta=vcat(PROPERTY_COLUMNS, PROPERTY_COLUMNS[1]),
+        fill="tonext",
+        connectgaps=true
+        # labels=Dict("x" => df[current_element_index, "Name"], "y" => df[similar_element_index, "Name"])
+    ))
+end
+
+# Set up the callback with multiple outputs and inputs
+callback!(app,
+    Output("datatable-property-similarity", "selected_rows"),
+    Input("datatable-property-similarity", "data"),
+) do _
+    return []
+end
+
 
 
 callback!(app,

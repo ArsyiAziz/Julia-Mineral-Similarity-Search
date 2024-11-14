@@ -69,15 +69,20 @@ function find_similar_minerals(df, target_index, columns, metric::Function, n)
     # Create the result DataFrame with names, similarity scores, and selected columns
     result_df = DataFrame(
         Name = df[sorted_indices, :Name],  # Adjust column name as necessary
-        Similarity = similarities[sorted_indices] * 100
+        Similarity = similarities[sorted_indices] 
     )
 
-    # Optionally, include additional columns for context
-    for col in columns
-        result_df[!, col] = df[sorted_indices, col]
-    end
+
+    result_df[!, "index"] = df[sorted_indices, "index"]
+   
 
     return result_df
 end
 
 end
+
+
+
+
+
+
