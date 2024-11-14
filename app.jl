@@ -1,5 +1,7 @@
 using Dash
 using CSV, DataFrames
+include("Calculate.jl")
+using .Calculate
 
 external_stylesheets = ["css/style.css"]
 external_scripts = [
@@ -36,7 +38,7 @@ app.layout = html_div([
                 ]),
                 html_div(className="flex flex-col-reverse", [
                     dcc_input(
-                        id="datatable-search", 
+                        id="datatable-search-database", 
                         value="", 
                         debounce=false,
                         className="rounded border border-slate-300 hover:border-slate-400 ps-2 rounded-full",
@@ -45,12 +47,12 @@ app.layout = html_div([
                 ]),
         ]),
         dash_datatable(
-            id="datatable",
+            id="datatable-database",
             columns=[Dict("name" => c, "id" => c) for c in visible_columns],
             page_current=0,
             page_action="custom",
-            row_selectable="multi",
-            column_selectable="single",
+            row_selectable="single",
+            # column_selectable="single",
             selected_columns=[],
             selected_rows=[],
             style_table=Dict(
@@ -75,54 +77,52 @@ app.layout = html_div([
         ]),
         
         html_div(className="px-8 py-6 rounded rounded-md bg-white", [
-            html_h2("Similarity Summary", className="text-xl font-bold"),
-            html_div(className="flex flex-row mb-6", [
-                html_button("Cosine", className="border-b-4 border-[#2563eb] px-2"),
-                html_button("Jaccard", className="border-b-4 border-gray px-2"),
-                html_button(),
+            html_h2("Property Similarity Summary", className="text-xl font-bold"),
+            
+            html_div(className="flex justify-between", [
+                html_div(className="flex flex-row mb-2", [
+                    html_button("Cosine", className="border-b-4 border-[#2563eb] px-2"),
+                    html_button("Jaccard", className="border-b-4 border-gray px-2"),
+                    html_button(),
+                ]),
+                html_div(className="flex flex-col mb-2",[
+                    html_div("Best of"),
+                    dcc_input(
+                        id="similar_size",
+                        type="number",
+                        min=5,
+                        max=100,
+                        value=10,
+                        className="rounded border border-slate-300 hover:border-slate-400 ps-2 rounded-full"
+                    ),
+                ]),
             ]),
             html_div(className="mb-2", [
-                html_div(id="selected-minerals", className="flex flex-row", [
-                    html_h3("Selected minerals:", className="pe-2 font-bold"), 
-
-                    html_div("Mineral 1", className="rounded-md border border-black px-2")])
-                ]),
+                html_div(className="flex flex-row", [
+                    html_h3("Selected mineral:", className="pe-2 font-bold"), 
+                    html_div(id="selected-minerals", className="flex flex-row space-x-2")
+                ])
+            ]),
             html_div(className="grid md:grid-cols-3", [
                 html_div([
-                    html_div("Top 5 Minerals"),
-                    html_table(className="table-auto w-full text-left", [
-                        html_thead([
-                            html_th("Mineral Name"),
-                            html_th("Score")
-                        ])
-                        html_tbody([
-                            html_tr([
-                                html_td("Placeholder"),
-                                html_td("90%")
-                            ]),
-                            html_tr([
-                                html_td("Placeholder"),
-                                html_td("90%")
-                            ]),
-                            html_tr([
-                                html_td("Placeholder"),
-                                html_td("90%")
-                            ]),
-                            html_tr([
-                                html_td("Placeholder"),
-                                html_td("90%")
-                            ]),
-                            html_tr([
-                                html_td("Placeholder"),
-                                html_td("90%")
-                            ]),
-                            
-                        ])
-                    ]),
-                ]),
-                html_div(className="md:col-span-2", [
-                        html_div("Similarity scores"),
-                        dcc_graph()
+                    dash_datatable(
+                        id="datatable-property-similarity",
+                        columns=[Dict("name" => "Name", "id" => "Name"), Dict("name" => "Similarity", "id" => "Similarity")],
+                        style_table=Dict(
+                            "minWidth" => "100%",      # Ensures table stretches to full width
+                            "overflowX" => "auto"      # Enables horizontal scroll
+                        ),
+                        style_cell=Dict(
+                            "textAlign" => "left",     # Left-align text
+                            # "minWidth" => "150px",     # Minimum width for columns
+                            "width" => "150px",        # Width of columns
+                            "maxWidth" => "300px",     # Max width for larger screens
+                            "whiteSpace" => "normal",  # Wrap text instead of truncating
+                        ),
+                        style_header=Dict(
+                            "fontWeight" => "bold"     # Bold header text
+                        ),
+                    ),
                 ]),
             ]),
         ])
@@ -131,12 +131,12 @@ app.layout = html_div([
 
 # Callback to update the table data based on page, search input, and update page count
 callback!(app,
-    Output("datatable", "data"),
-    Output("datatable", "page_count"),
-    Output("datatable", "page_current"),
-    Input("datatable", "page_current"),
-    Input("datatable", "page_size"),
-    Input("datatable-search", "value")
+    Output("datatable-database", "data"),
+    Output("datatable-database", "page_count"),
+    Output("datatable-database", "page_current"),
+    Input("datatable-database", "page_current"),
+    Input("datatable-database", "page_size"),
+    Input("datatable-search-database", "value")
 ) do page_current, page_size, search
     # Filter rows based on search input, if provided
     filtered_df = if !isempty(search)
@@ -157,15 +157,39 @@ callback!(app,
 
     # Paginate the filtered data
     paginated_df = filtered_df[(page_current*page_size+1):min((page_current+1)*page_size, nrow(filtered_df)), :]
-    return Dict.(pairs.(eachrow(paginated_df))), page_count, page_current
+    Dict.(pairs.(eachrow(paginated_df))), page_count, page_current
+end
+
+
+
+callback!(app,
+    Output("datatable-property-similarity", "data"),
+    Output("selected-minerals", "children"),
+    Input("datatable-database", "selected_rows"),
+    Input("similar_size", "value"),
+    State("datatable-database", "page_current"),
+    State("datatable-database", "page_size"),
+) do selected_rows, similar_size, page_current, page_size
+    if selected_rows == []
+        return [Dict("Name" => "-", "Similarity" => "-")], ""
+    end 
+    selected_rows = map(row -> page_current*page_size + row + 1, selected_rows)
+    selected_minerals = map(row -> begin
+        html_div(row, className="border border-slate-500 rounded rounded-md px-2 bg-[#475569] text-white")
+        end, df[selected_rows, "Name"]
+    )
+    similarity_columns = ["Crystal Structure", "Mohs Hardness", "Diaphaneity", "Specific Gravity", "Optical", "Refractive Index", "Dispersion"]
+
+    df_similarity  = find_similar_minerals(df, selected_rows[1], similarity_columns, similar_size)
+    Dict.(pairs.(eachrow(df_similarity))), selected_minerals
 end
 
 # Callback for updating page size when changed by the user
 callback!(app,
-    Output("datatable", "page_size"),
+    Output("datatable-database", "page_size"),
     Input("datatable-page-size", "value")
 ) do page_size
-    return page_size isa Nothing || page_size < 1 ? nothing : page_size
+    page_size isa Nothing || page_size < 1 ? nothing : page_size
 end
 
 # Run the server
