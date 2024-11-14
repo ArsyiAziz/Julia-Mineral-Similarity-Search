@@ -60,6 +60,7 @@ app.layout = html_div([
             row_selectable="single",
             # column_selectable="single",
             selected_columns=[],
+            cell_selectable=false,
             selected_rows=[],
             style_table=Dict(
                         "minWidth" => "100%",      # Ensures table stretches to full width
@@ -129,6 +130,7 @@ app.layout = html_div([
                         style_header=Dict(
                             "fontWeight" => "bold"     # Bold header text
                         ),
+                        cell_selectable=false,
                         row_selectable="single",
                         selected_rows=[]
                     ),
@@ -280,7 +282,7 @@ callback!(app,
     State("datatable-property-similarity", "data"),
 ) do database_selected_rows, property_similarity_selected_rows, database_data, property_similarity_data
     if database_selected_rows == [] || property_similarity_selected_rows == []
-        return plot(scatterpolar(r=[0, 0, 0, 0, 0, 0, 0, 0], theta=vcat(PROPERTY_COLUMNS, PROPERTY_COLUMNS[1]) ))
+        return plot(scatterpolar(r=[0, 0, 0, 0, 0, 0, 0], theta=vcat(PROPERTY_COLUMNS, PROPERTY_COLUMNS[1]) ))
     end
 
     current_element_index = get_datatable_row_index(database_data, database_selected_rows[1] + 1)
