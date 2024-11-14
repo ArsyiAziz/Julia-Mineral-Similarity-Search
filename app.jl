@@ -173,7 +173,7 @@ callback!(app,
     if selected_rows == []
         return [Dict("Name" => "-", "Similarity" => "-")], ""
     end 
-    selected_rows = map(row -> page_current*page_size + row + 1, selected_rows)
+    selected_rows = map(row -> row + 1, selected_rows)
     selected_indices = map(row -> data[row]["index"], selected_rows)
     
     selected_minerals = map(row -> begin
