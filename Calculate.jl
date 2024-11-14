@@ -61,6 +61,7 @@ function find_similar_minerals(df, target_index, columns, metric::Function, n)
     similarities = [metric(target, row) for row in eachrow(numeric_df)]
 
     descending = (metric ∈ [cosine_similarity, ruzicka_similarity]) ? true : false    
+    multiplier = (metric ∈ [cosine_similarity, ruzicka_similarity]) ? 100 : 0 
 
     # Get indices of the top-n most similar rows, excluding the target itself
     sorted_indices = sortperm(similarities, rev=descending)
@@ -69,7 +70,7 @@ function find_similar_minerals(df, target_index, columns, metric::Function, n)
     # Create the result DataFrame with names, similarity scores, and selected columns
     result_df = DataFrame(
         Name = df[sorted_indices, :Name],  # Adjust column name as necessary
-        Similarity = similarities[sorted_indices] 
+        Similarity = similarities[sorted_indices]  * multiplier
     )
 
 

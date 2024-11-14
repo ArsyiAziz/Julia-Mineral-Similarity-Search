@@ -87,8 +87,8 @@ app.layout = html_div([
             html_div(className="flex justify-between mb-4", [
                 html_div(className="flex flex-row mb-2", [
                     dcc_store(id="memory-metric"),
-                    html_button("Cosine", id="btn-cosine-metric", className="border-b-4 border-[#2563eb] px-2"),
-                    html_button("Ruzicka", id="btn-ruzicka-metric", className="border-b-4 border-gray px-2"),
+                    html_button("Ruzicka", id="btn-ruzicka-metric", className="border-b-4 border-[#2563eb] px-2"),
+                    html_button("Cosine", id="btn-cosine-metric", className="border-b-4 border-gray px-2"),
                     html_button("Manhattan", id="btn-manhattan-metric", className="border-b-4 border-gray px-2"),
                     html_button("Euclidean", id="btn-euclidean-metric", className="border-b-4 border-gray px-2"),
                     html_button(),
@@ -203,14 +203,14 @@ callback!(app,
     selected_index = get_datatable_row_index(data, selected_rows[1] + 1)
    
 
-    if metric == "ruzicka"
-        metric = ruzicka_similarity
-    elseif metric == "manhattan"
+    if metric == "manhattan_distance"
         metric = manhattan_distance
+    elseif metric == "cosine"
+        metric = cosine_similarity
     elseif metric == "euclidean"
         metric = euclidean_distance
     else
-        metric = cosine_similarity
+        metric = ruzicka_similarity
     end
 
     selected_mineral = html_div(df[selected_index, "Name"], className="border border-slate-500 rounded rounded-md px-2 bg-[#475569] text-white")
@@ -260,11 +260,11 @@ callback!(app,
     # Check if any button was triggered
     if isempty(ctx.triggered)
         # Default state if no button has been pressed
-        return ("border-b-4 border-[#2563eb] px-2 active-similarity-button",
+        return ("border-b-4 border-gray px-2",
+                "border-b-4 border-[#2563eb] px-2 active-similarity-button",
                 "border-b-4 border-gray px-2",
                 "border-b-4 border-gray px-2",
-                "border-b-4 border-gray px-2",
-                "cosine")
+                "ruzicka")
     end
 
     # Extract the ID of the triggered button and adjust styles accordingly
@@ -301,7 +301,8 @@ callback!(app,
         r=vcat(element_similarities, element_similarities[1]),
         theta=vcat(PROPERTY_COLUMNS, PROPERTY_COLUMNS[1]),
         fill="tonext",
-        connectgaps=true
+        connectgaps=true,
+        name=""
         # labels=Dict("x" => df[current_element_index, "Name"], "y" => df[similar_element_index, "Name"])
     ))
 end
