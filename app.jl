@@ -142,7 +142,10 @@ app.layout = html_div([
                 )
             ]),
         ])
-    ])
+    ]),
+    html_footer(className="px-10 py-6 mx-auto mt-8 bg-[#52525b] w-screen", [
+        html_p("CSCI 6221 - Julia Group", className="text-xl font-mono text-white")
+    ]),
 ])
 
 # Callback to update the table data based on page, search input, and update page count
