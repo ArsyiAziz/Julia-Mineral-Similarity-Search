@@ -18,19 +18,19 @@ df[!,"index"] = 1:nrow(df)
 
 PROPERTY_COLUMNS = ["Crystal Structure", "Mohs Hardness", "Diaphaneity", "Specific Gravity", "Optical", "Refractive Index", "Dispersion"]
 ELEMENT_COLUMNS = [
-    "Hydrogen", "Helium", "Lithium", "Beryllium", "Boron", "Carbon", "Nitrogen", "Oxygen", "Fluorine", "Neon",
-    "Sodium", "Magnesium", "Aluminium", "Silicon", "Phosphorus", "Sulfur", "Chlorine", "Argon", "Potassium", "Calcium",
-    "Scandium", "Titanium", "Vanadium", "Chromium", "Manganese", "Iron", "Cobalt", "Nickel", "Copper", "Zinc",
-    "Gallium", "Germanium", "Arsenic", "Selenium", "Bromine", "Krypton", "Rubidium", "Strontium", "Yttrium", "Zirconium",
-    "Niobium", "Molybdenum", "Technetium", "Ruthenium", "Rhodium", "Palladium", "Silver", "Cadmium", "Indium", "Tin",
-    "Antimony", "Tellurium", "Iodine", "Xenon", "Cesium", "Barium", "Lanthanum", "Cerium", "Praseodymium", "Neodymium",
-    "Promethium", "Samarium", "Europium", "Gadolinium", "Terbium", "Dysprosium", "Holmium", "Erbium", "Thulium", "Ytterbium",
-    "Lutetium", "Hafnium", "Tantalum", "Tungsten", "Rhenium", "Osmium", "Iridium", "Platinum", "Gold", "Mercury",
-    "Thallium", "Lead", "Bismuth", "Polonium", "Astatine", "Radon", "Francium", "Radium", "Actinium", "Thorium",
-    "Protactinium", "Uranium", "Neptunium", "Plutonium", "Americium", "Curium", "Berkelium", "Californium", "Einsteinium",
-    "Fermium", "Mendelevium", "Nobelium", "Lawrencium", "Rutherfordium", "Dubnium", "Seaborgium", "Bohrium", "Hassium",
-    "Meitnerium", "Darmstadtium", "Roentgenium", "Copernicium", "Nihonium", "Flerovium", "Moscovium", "Livermorium",
-    "Tennessine", "Oganesson"
+    "Actinium", "Aluminium", "Americium", "Antimony", "Argon", "Arsenic", "Astatine", "Barium", "Berkelium", "Beryllium",
+    "Bismuth", "Bohrium", "Boron", "Bromine", "Cadmium", "Calcium", "Californium", "Carbon", "Cerium", "Cesium",
+    "Chlorine", "Chromium", "Cobalt", "Copernicium", "Copper", "Curium", "Darmstadtium", "Dubnium", "Dysprosium", 
+    "Einsteinium", "Erbium", "Europium", "Fermium", "Flerovium", "Fluorine", "Francium", "Gadolinium", "Gallium",
+    "Germanium", "Gold", "Hafnium", "Hassium", "Helium", "Holmium", "Hydrogen", "Indium", "Iodine", "Iridium",
+    "Iron", "Krypton", "Lanthanum", "Lawrencium", "Lead", "Lithium", "Livermorium", "Lutetium", "Magnesium",
+    "Manganese", "Meitnerium", "Mendelevium", "Mercury", "Molybdenum", "Moscovium", "Neodymium", "Neon", "Neptunium",
+    "Nickel", "Nihonium", "Niobium", "Nitrogen", "Nobelium", "Oganesson", "Osmium", "Oxygen", "Palladium",
+    "Phosphorus", "Platinum", "Plutonium", "Polonium", "Potassium", "Praseodymium", "Promethium", "Protactinium",
+    "Radium", "Radon", "Rhenium", "Rhodium", "Roentgenium", "Rubidium", "Ruthenium", "Rutherfordium", "Samarium",
+    "Scandium", "Seaborgium", "Selenium", "Silicon", "Silver", "Sodium", "Strontium", "Sulfur", "Tantalum",
+    "Technetium", "Tellurium", "Tennessine", "Terbium", "Thallium", "Thorium", "Thulium", "Tin", "Titanium",
+    "Tungsten", "Uranium", "Vanadium", "Xenon", "Ytterbium", "Yttrium", "Zinc", "Zirconium"
 ]
 
 VISIBLE_COLUMNS = vcat(["Name"], PROPERTY_COLUMNS)
