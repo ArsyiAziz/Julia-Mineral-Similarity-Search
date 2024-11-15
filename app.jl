@@ -159,7 +159,7 @@ app.layout = html_div([
                     ]),
                 ]),
                 html_div(className="pt-4", [
-                    html_h3("Composition", className="text-xl font-bold"),
+                    html_h3("Mineral Composition", className="text-xl font-bold mb-2"),
                     dash_datatable(
                         id="datatable-composition",
                         cell_selectable=false,
@@ -169,7 +169,7 @@ app.layout = html_div([
                         ),
                         style_cell=Dict(
                             "textAlign" => "left",     # Left-align text
-                            # "minWidth" => "150px",     # Minimum width for columns
+                            "minWidth" => "100px",     # Minimum width for columns
                             "width" => "150px",        # Width of columns
                             "maxWidth" => "300px",     # Max width for larger screens
                             "whiteSpace" => "normal",  # Wrap text instead of truncating
@@ -245,7 +245,6 @@ callback!(app,
     end 
 
     selected_index = get_datatable_row_index(data, selected_rows[1] + 1)
-   
 
     if metric == "manhattan"
         metric = manhattan_distance
@@ -362,16 +361,21 @@ end
 callback!(app,
     Output("datatable-composition", "data"),
     Input("datatable-database", "selected_rows"),
+    Input("datatable-property-similarity", "selected_rows"),
     State("datatable-database", "data"),
+    State("datatable-property-similarity", "data")
 
-) do database_selected_rows, database_data
-    if database_selected_rows == []
-        return []
+) do database_selected_rows, property_similarity_selected_rows, database_data, property_similarity_data
+    idxs = []
+    if database_selected_rows != []
+        idxs = vcat(idxs, get_datatable_row_index(database_data, database_selected_rows[1] + 1))
     end
-    selected_index = get_datatable_row_index(database_data, database_selected_rows[1] + 1)
-    selected_row = df[selected_index, :]
-    
-    Dict.(pairs.(eachrow(selected_row))) 
+    if property_similarity_selected_rows != []
+        idxs = vcat(idxs, get_datatable_row_index(property_similarity_data, property_similarity_selected_rows[1] + 1))
+
+    end
+
+    Dict.(pairs.(eachrow(df[idxs, :]))) 
 end
 
 
