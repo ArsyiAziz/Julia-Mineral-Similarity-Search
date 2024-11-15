@@ -17,6 +17,21 @@ df[!,"index"] = 1:nrow(df)
 
 
 PROPERTY_COLUMNS = ["Crystal Structure", "Mohs Hardness", "Diaphaneity", "Specific Gravity", "Optical", "Refractive Index", "Dispersion"]
+ELEMENT_COLUMNS = [
+    "Hydrogen", "Helium", "Lithium", "Beryllium", "Boron", "Carbon", "Nitrogen", "Oxygen", "Fluorine", "Neon",
+    "Sodium", "Magnesium", "Aluminium", "Silicon", "Phosphorus", "Sulfur", "Chlorine", "Argon", "Potassium", "Calcium",
+    "Scandium", "Titanium", "Vanadium", "Chromium", "Manganese", "Iron", "Cobalt", "Nickel", "Copper", "Zinc",
+    "Gallium", "Germanium", "Arsenic", "Selenium", "Bromine", "Krypton", "Rubidium", "Strontium", "Yttrium", "Zirconium",
+    "Niobium", "Molybdenum", "Technetium", "Ruthenium", "Rhodium", "Palladium", "Silver", "Cadmium", "Indium", "Tin",
+    "Antimony", "Tellurium", "Iodine", "Xenon", "Cesium", "Barium", "Lanthanum", "Cerium", "Praseodymium", "Neodymium",
+    "Promethium", "Samarium", "Europium", "Gadolinium", "Terbium", "Dysprosium", "Holmium", "Erbium", "Thulium", "Ytterbium",
+    "Lutetium", "Hafnium", "Tantalum", "Tungsten", "Rhenium", "Osmium", "Iridium", "Platinum", "Gold", "Mercury",
+    "Thallium", "Lead", "Bismuth", "Polonium", "Astatine", "Radon", "Francium", "Radium", "Actinium", "Thorium",
+    "Protactinium", "Uranium", "Neptunium", "Plutonium", "Americium", "Curium", "Berkelium", "Californium", "Einsteinium",
+    "Fermium", "Mendelevium", "Nobelium", "Lawrencium", "Rutherfordium", "Dubnium", "Seaborgium", "Bohrium", "Hassium",
+    "Meitnerium", "Darmstadtium", "Roentgenium", "Copernicium", "Nihonium", "Flerovium", "Moscovium", "Livermorium",
+    "Tennessine", "Oganesson"
+]
 
 VISIBLE_COLUMNS = vcat(["Name"], PROPERTY_COLUMNS)
 
@@ -82,40 +97,72 @@ app.layout = html_div([
         ]),
         
         html_div(className="px-8 py-6 rounded rounded-md bg-white", [
-            html_h2("Property Similarity Summary", className="text-xl font-bold"),
-            
-            html_div(className="flex justify-between mb-4", [
-                html_div(className="flex flex-row mb-2", [
-                    dcc_store(id="memory-metric"),
-                    html_button("Ruzicka", id="btn-ruzicka-metric", className="border-b-4 border-[#2563eb] px-2"),
-                    html_button("Cosine", id="btn-cosine-metric", className="border-b-4 border-gray px-2"),
-                    html_button("Manhattan", id="btn-manhattan-metric", className="border-b-4 border-gray px-2"),
-                    html_button("Euclidean", id="btn-euclidean-metric", className="border-b-4 border-gray px-2"),
-                    html_button(),
-                ]),
-                html_div(className="flex flex-col mb-2",[
-                    html_div("Best of"),
-                    dcc_input(
-                        id="similar_size",
-                        type="number",
-                        min=5,
-                        max=100,
-                        value=10,
-                        className="rounded border border-slate-300 hover:border-slate-400 ps-2 rounded-full"
-                    ),
-                ]),
-            ]),
-            html_div(className="mb-2", [
-                html_div(className="flex flex-row", [
-                    html_h3("Selected mineral:", className="pe-2 font-bold"), 
-                    html_div(id="selected-minerals", className="flex flex-row space-x-2")
-                ])
-            ]),
-            html_div(className="grid md:grid-cols-3", [
+            html_h2("Similarity Summary", className="text-xl font-bold"),
+            html_div(className="grid grid-cols-1 divide-y", [
                 html_div([
+                    html_div(className="flex justify-between mb-4", [
+                        html_div(className="flex flex-row mb-2", [
+                            dcc_store(id="memory-metric"),
+                            html_button("Ruzicka", id="btn-ruzicka-metric", className="border-b-4 border-[#2563eb] px-2"),
+                            html_button("Cosine", id="btn-cosine-metric", className="border-b-4 border-gray px-2"),
+                            html_button("Manhattan", id="btn-manhattan-metric", className="border-b-4 border-gray px-2"),
+                            html_button("Euclidean", id="btn-euclidean-metric", className="border-b-4 border-gray px-2"),
+                            html_button(),
+                        ]),
+                        html_div(className="flex flex-col mb-2",[
+                            html_div("Best of"),
+                            dcc_input(
+                                id="similar_size",
+                                type="number",
+                                min=5,
+                                max=100,
+                                value=10,
+                                className="rounded border border-slate-300 hover:border-slate-400 ps-2 rounded-full"
+                            ),
+                        ]),
+                    ]),
+                    html_div(className="mb-2", [
+                        html_div(className="flex flex-row", [
+                            html_h3("Selected mineral:", className="pe-2 font-bold"), 
+                            html_div(id="selected-minerals", className="flex flex-row space-x-2")
+                        ])
+                    ]),
+                    html_div(className="grid md:grid-cols-3", [
+                        html_div([
+                            dash_datatable(
+                                id="datatable-property-similarity",
+                                columns=[Dict("name" => "Name", "id" => "Name"), Dict("name" => "Similarity (%)", "id" => "Similarity")],
+                                style_table=Dict(
+                                    "minWidth" => "100%",      # Ensures table stretches to full width
+                                    "overflowX" => "auto"      # Enables horizontal scroll
+                                ),
+                                style_cell=Dict(
+                                    "textAlign" => "left",     # Left-align text
+                                    # "minWidth" => "150px",     # Minimum width for columns
+                                    "width" => "150px",        # Width of columns
+                                    "maxWidth" => "300px",     # Max width for larger screens
+                                    "whiteSpace" => "normal",  # Wrap text instead of truncating
+                                ),
+                                style_header=Dict(
+                                    "fontWeight" => "bold"     # Bold header text
+                                ),
+                                cell_selectable=false,
+                                row_selectable="single",
+                                selected_rows=[]
+                            ),
+                        ]),
+                        dcc_graph(
+                            id="graph-properties", 
+                            className="md:col-span-2 min-h-96",
+                            
+                        )
+                    ]),
+                ]),
+                html_div(className="pt-4", [
+                    html_h3("Composition", className="text-xl font-bold"),
                     dash_datatable(
-                        id="datatable-property-similarity",
-                        columns=[Dict("name" => "Name", "id" => "Name"), Dict("name" => "Similarity (%)", "id" => "Similarity")],
+                        id="datatable-composition",
+                        cell_selectable=false,
                         style_table=Dict(
                             "minWidth" => "100%",      # Ensures table stretches to full width
                             "overflowX" => "auto"      # Enables horizontal scroll
@@ -130,17 +177,11 @@ app.layout = html_div([
                         style_header=Dict(
                             "fontWeight" => "bold"     # Bold header text
                         ),
-                        cell_selectable=false,
-                        row_selectable="single",
-                        selected_rows=[]
-                    ),
-                ]),
-                dcc_graph(
-                    id="graph-properties", 
-                    className="md:col-span-2 min-h-96",
-                    
-                )
-            ]),
+                        columns=vcat([Dict("name" => "Mineral Name", "id" => "Name")], [Dict("name" => c, "id" => c) for c in ELEMENT_COLUMNS])
+                    )
+                ])
+            ])
+            
         ])
     ]),
     html_footer(className="px-10 py-6 mx-auto mt-8 bg-[#52525b] w-screen", [
@@ -200,13 +241,13 @@ callback!(app,
 
 ) do selected_rows, metric, similar_size, data, page_current, page_size
     if selected_rows == []
-        return [], ""
+        return [], html_div("No selected mineral", className="border border-white rounded rounded-md px-2 bg-red-500 text-white")
     end 
 
     selected_index = get_datatable_row_index(data, selected_rows[1] + 1)
    
 
-    if metric == "manhattan_distance"
+    if metric == "manhattan"
         metric = manhattan_distance
     elseif metric == "cosine"
         metric = cosine_similarity
@@ -317,6 +358,22 @@ callback!(app,
 ) do _
     return []
 end
+
+callback!(app,
+    Output("datatable-composition", "data"),
+    Input("datatable-database", "selected_rows"),
+    State("datatable-database", "data"),
+
+) do database_selected_rows, database_data
+    if database_selected_rows == []
+        return []
+    end
+    selected_index = get_datatable_row_index(database_data, database_selected_rows[1] + 1)
+    selected_row = df[selected_index, :]
+    
+    Dict.(pairs.(eachrow(selected_row))) 
+end
+
 
 
 
